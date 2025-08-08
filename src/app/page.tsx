@@ -17,8 +17,25 @@ const [emailError, setEmailError] = useState("");
 const [claveError, setClaveError] = useState("");
 const [confirmarClaveError, setConfirmarClaveError] = useState("");
 const [isLoading, setIsLoading] = useState(false);
+const [dniError, setDniError] = useState("");
+useEffect(() => {
+  const dniTrimmed = dni.trim();
+
+  if (dniTrimmed === "") {
+    setDniError("");
+    return;
+  }
+
+  if (dniTrimmed.length < 8) {
+    setDniError("La identificación debe tener al menos 8 caracteres.");
+  } else {
+    setDniError("");
+  }
+}, [dni]);
+
 
 const handleDniCheck = async () => {
+    if (dniError) return;
   setIsSearching(true);
   const res = await fetch(`/api/check-dni`, {
     method: "POST",
@@ -123,6 +140,9 @@ disabled={dniValid || isSearching}
 className={`w-full border rounded-md px-3 py-2 ${(dniValid || isSearching) ? "bg-gray-100 cursor-not-allowed" : ""}`}
 
             />
+            {dniError && (
+  <p className="text-red-500 text-sm mt-1">{dniError}</p>
+)}
           </div>
 <button
   type="submit"
