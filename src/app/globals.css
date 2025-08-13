@@ -25,3 +25,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* globals.css o layout.css */
+html, body {
+  overflow: hidden; /* ❌ elimina scroll de navegador embebido */
+  height: 100%;     /* ✅ asegura que ocupe todo el espacio del iframe */
+  margin: 0;
+  padding: 0;
+}

@@ -3,241 +3,323 @@ import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 
 export default function Home() {
-  const [dni, setDni] = useState("");
-  const [dniValid, setDniValid] = useState(false);
-  const [nombreCompleto, setNombreCompleto] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameValid, setUsernameValid] = useState(false);
+  const [nombres, setNombres] = useState("");
+  const [apellidos, setApellidos] = useState("");  const [mail, setMail] = useState("");
+  const [mailValid, setMailValid] = useState(false);
   const [clave, setClave] = useState("");
+  const [claveValid, setClaveValid] = useState(false);
   const [confirmarClave, setConfirmarClave] = useState("");
-  const [, setEmailSent] = useState(false);
+  const [confirmarClaveValid, setConfirmarClaveValid] = useState(false);
+  const [, setMailSent] = useState(false);
   const [formValid, setFormValid] = useState(false);
-const [isSearching, setIsSearching] = useState(false);
-const [showPopup, setShowPopup] = useState(false);
-const [emailError, setEmailError] = useState("");
-const [claveError, setClaveError] = useState("");
-const [confirmarClaveError, setConfirmarClaveError] = useState("");
-const [isLoading, setIsLoading] = useState(false);
-const [dniError, setDniError] = useState("");
-useEffect(() => {
-  const dniTrimmed = dni.trim();
+  const [isSearching, setIsSearching] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showUsernameErrorPopup, setShowUsernameErrorPopup] = useState(false); // Nuevo estado para el popup de error de DNI
+  const [mailError, setMailError] = useState("");
+  const [claveError, setClaveError] = useState("");
+  const [confirmarClaveError, setConfirmarClaveError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
+  
+  useEffect(() => {
+    const usernameTrimmed = username.trim();
 
-  if (dniTrimmed === "") {
-    setDniError("");
-    return;
-  }
+    if (usernameTrimmed === "") {
+      setUsernameError("");
+      return;
+    }
 
-  if (dniTrimmed.length < 8) {
-    setDniError("La identificación debe tener al menos 8 caracteres.");
-  } else {
-    setDniError("");
-  }
-}, [dni]);
+    if (usernameTrimmed.length < 8) {
+      setUsernameError("La identificación debe tener al menos 8 caracteres.");
+    } else {
+      setUsernameError("");
+    }
+  }, [username]);
 
+  const handleUsernameCheck = async () => {
+    if (usernameError) return;
+    setIsSearching(true);
 
-const handleDniCheck = async () => {
-    if (dniError) return;
-  setIsSearching(true);
-  const res = await fetch(`/api/check-dni`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dni })
-  });
-  const data = await res.json();
+    const res = await fetch(`/api/check-dni`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dni: username })
+    });
+    const data = await res.json();
 
-  if (data?.data?.ESTADO === "ACTIVO") {
-    setDniValid(true);
-    setNombreCompleto(data.data.NOMBRE.trim());
-  } else {
-    setDniValid(false);
-    setNombreCompleto("");
-    alert("DNI no válido o trabajador no activo");
-  }
-  setIsSearching(false);
-};
+    if (data?.data?.ESTADO === "ACTIVO") {
+      if (data.data?.mail && data.data.mail.trim() !== "") {
+        setUsernameValid(false);
+        setShowUsernameErrorPopup(true);
+        setIsSearching(false);
+        return;
+      }
+
+      const nombreParts = data.data.NOMBRE.trim().split(" ").filter(Boolean);
+      const posiblesApellidos = nombreParts.slice(0, 2).join(" ");
+      const posiblesNombres = nombreParts.slice(2).join(" ");
+      setNombres(posiblesNombres);
+      setApellidos(posiblesApellidos);
+      setUsernameValid(true);
+    } else {
+      setUsernameValid(false);
+      setNombres("");
+      setApellidos("");
+      setShowUsernameErrorPopup(true);
+    }
+
+    setIsSearching(false);
+  };
 
 
   const handleResetForm = () => {
-    setDni("");
-    setDniValid(false);
-    setNombreCompleto("");
-    setEmail("");
+    setUsername("");
+    setUsernameValid(false);
+    setNombres("");
+    setApellidos("");
+    setMail("");
+    setMailValid(false);
     setClave("");
+    setClaveValid(false);
     setConfirmarClave("");
-    setEmailSent(false);
+    setConfirmarClaveValid(false);
+    setMailSent(false);
     setFormValid(false);
   };
 
-  const handleSendEmail = async () => {
-  if (emailError || claveError || confirmarClaveError || !formValid) return;
+  const handleSendMail = async () => {
+    if (mailError || claveError || confirmarClaveError || !formValid) return;
 
-  setIsLoading(true);
-  const res = await fetch("/api/send-verification-email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dni, nombreCompleto, email, clave })
-  });
+    setIsLoading(true);
+    const res = await fetch("/api/send-verification-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        mail,
+        clave,
+        nombres,
+        apellidos
+      })
+    });
 
-  setIsLoading(false);
-    if (res.ok) 
-  setEmailSent(true);
-  setShowPopup(true);
-  handleResetForm();
-};
-useEffect(() => {
-  // Email formato simple regex
-const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/;
-  if (email && !emailRegex.test(email)) {
-    setEmailError("Ingresa un correo válido.");
-  } else {
-    setEmailError("");
-  }
+    setIsLoading(false);
+    if (res.ok) {
+      setMailSent(true);
+      setShowPopup(true);
+      handleResetForm();
+    }
+  };
+  
+  useEffect(() => {
+    // Mail formato simple regex
+    const mailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/;
+    if (mail && !mailRegex.test(mail)) {
+      setMailError("Ingresa un correo válido.");
+      setMailValid(false);
+    } else if (mail) {
+      setMailError("");
+      setMailValid(true);
+    } else {
+      setMailError("");
+      setMailValid(false);
+    }
 
-  // Clave mínimo 6 caracteres
-  if (clave && clave.length < 6) {
-    setClaveError("Clave mínima de 6 caracteres.");
-  } else {
-    setClaveError("");
-  }
+    // Clave mínimo 6 caracteres
+    if (clave && clave.length < 6) {
+      setClaveError("Clave mínima de 6 caracteres.");
+      setClaveValid(false);
+    } else if (clave) {
+      setClaveError("");
+      setClaveValid(true);
+    } else {
+      setClaveError("");
+      setClaveValid(false);
+    }
 
-  // Confirmar clave
-  if (confirmarClave && clave !== confirmarClave) {
-    setConfirmarClaveError("Las claves no coinciden.");
-  } else {
-    setConfirmarClaveError("");
-  }
-}, [email, clave, confirmarClave]);
+    // Confirmar clave - asegurarse de que la validación sea correcta
+    if (confirmarClave && clave !== confirmarClave) {
+      setConfirmarClaveError("Las claves no coinciden.");
+      setConfirmarClaveValid(false);
+    } else if (confirmarClave && clave === confirmarClave && clave.length >= 6) {
+      setConfirmarClaveError("");
+      setConfirmarClaveValid(true);
+      // Asegurarse de que la clave principal también se marque como válida
+      setClaveValid(true);
+    } else {
+      setConfirmarClaveError("");
+      setConfirmarClaveValid(false);
+    }
+  }, [mail, clave, confirmarClave]);
 
   useEffect(() => {
     if (
-      dniValid &&
-      nombreCompleto.trim() &&
-      email.trim() &&
+      usernameValid &&
+      nombres.trim() &&
+      apellidos.trim() &&
+      mail.trim() &&
+      mailValid &&
       clave &&
+      claveValid &&
       confirmarClave &&
-      clave === confirmarClave
+      confirmarClaveValid
     ) {
       setFormValid(true);
     } else {
       setFormValid(false);
     }
-  }, [dniValid, nombreCompleto, email, clave, confirmarClave]);
+  }, [
+    usernameValid,
+    nombres,
+    apellidos,
+    mail,
+    mailValid,
+    clave,
+    claveValid,
+    confirmarClave,
+    confirmarClaveValid
+  ]);
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <header className="bg-red-600 text-white py-4 px-6 rounded-md flex justify-between items-center">
-       
-      </header>
+    <div className="max-w-2xl mx-auto min-h-screen"> {/* Cambiado de max-w-md a max-w-2xl para hacerlo más ancho */}
 
-      <form className="space-y-4 mt-6" onSubmit={(e) => { e.preventDefault(); handleDniCheck(); }}>
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700">DNI</label>
+
+      <div className="p-6 space-y-6"> {/* Aumentado el padding */}
+        <div className="relative">
+          <label className="text-gray-500 text-sm font-normal">DNI</label>
+          <div className="flex items-center">
             <input
               type="text"
-              value={dni}
-              onChange={(e) => setDni(e.target.value)}
-disabled={dniValid || isSearching}
-className={`w-full border rounded-md px-3 py-2 ${(dniValid || isSearching) ? "bg-gray-100 cursor-not-allowed" : ""}`}
-
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={usernameValid || isSearching}
+              className={`w-full py-1 border-b-2 ${usernameError ? 'border-red-500' : usernameValid ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
             />
-            {dniError && (
-  <p className="text-red-500 text-sm mt-1">{dniError}</p>
-)}
+            <button
+              onClick={handleUsernameCheck}
+              disabled={isSearching || usernameValid || !!usernameError || username.trim().length < 8}
+              className={`absolute right-0 text-red-500 hover:bg-red-50 p-1 rounded-full transition-colors ${(isSearching || usernameValid || !!usernameError || username.trim().length < 8) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <Search className="w-6 h-6" />
+            </button>
           </div>
-<button
-  type="submit"
-  disabled={isSearching || dniValid}
-  className={`p-2 rounded-full border border-red-600 text-red-600 ${!dniValid && !isSearching ? "hover:bg-red-100" : "cursor-not-allowed opacity-50"}`}
->
-  {isSearching ? <div className="animate-spin border-2 border-red-600 border-t-transparent rounded-full w-5 h-5"></div> : <Search className="w-5 h-5" />}
-</button>
+          {usernameError && (
+            <p className="text-red-500 text-sm mt-1">{usernameError}</p>
+          )}
+        </div>
+
+      <div>
+        <label className="text-gray-500 text-sm font-normal">Nombres</label>
+        <input
+          type="text"
+          value={nombres}
+          readOnly
+          className={`w-full py-1 border-b-2 ${nombres ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
+        />
+      </div>
+
+      <div>
+        <label className="text-gray-500 text-sm font-normal">Apellidos</label>
+        <input
+          type="text"
+          value={apellidos}
+          readOnly
+          className={`w-full py-1 border-b-2 ${apellidos ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
+        />
+      </div>
+
+        <div>
+          <label className="text-gray-500 text-sm font-normal">Correo</label>
+          <input
+            type="email"
+            value={mail}
+            onChange={(e) => setMail(e.target.value)}
+            disabled={!usernameValid || isSearching}
+            className={`w-full py-1 border-b-2 ${mailError ? 'border-red-500' : mailValid ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
+          />
+          {mailError && <p className="text-red-500 text-sm mt-1">{mailError}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Nombre</label>
+          <label className="text-gray-500 text-sm font-normal">Clave</label>
           <input
-            type="text"
-            value={nombreCompleto}
-            readOnly
-            className="w-full border rounded-md px-3 py-2 bg-gray-100"
+            type="password"
+            value={clave}
+            onChange={(e) => setClave(e.target.value)}
+            disabled={!usernameValid || isSearching}
+            className={`w-full py-1 border-b-2 ${claveError ? 'border-red-500' : claveValid ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
           />
+          {claveError && <p className="text-red-500 text-sm mt-1">{claveError}</p>}
         </div>
 
-<div>
-  <label className="block text-sm font-medium text-gray-700">Correo</label>
-  <input
-    type="email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    disabled={!dniValid || isSearching}
-    className={`w-full border rounded-md px-3 py-2 ${(!dniValid || isSearching) ? "bg-gray-100 cursor-not-allowed" : ""}`}
-  />
-  {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
-</div>
+        <div>
+          <label className="text-gray-500 text-sm font-normal">Confirmar clave</label>
+          <input
+            type="password"
+            value={confirmarClave}
+            onChange={(e) => setConfirmarClave(e.target.value)}
+            disabled={!usernameValid || isSearching}
+            className={`w-full py-1 border-b-2 ${confirmarClaveError ? 'border-red-500' : confirmarClaveValid ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
+          />
+          {confirmarClaveError && <p className="text-red-500 text-sm mt-1">{confirmarClaveError}</p>}
+        </div>
 
-<div>
-  <label className="block text-sm font-medium text-gray-700">Clave</label>
-  <input
-    type="password"
-    value={clave}
-    onChange={(e) => setClave(e.target.value)}
-    disabled={!dniValid || isSearching}
-    className={`w-full border rounded-md px-3 py-2 ${(!dniValid || isSearching) ? "bg-gray-100 cursor-not-allowed" : ""}`}
-  />
-  {claveError && <p className="text-red-500 text-sm mt-1">{claveError}</p>}
-</div>
+        <div className="pt-4"> {/* Añadido padding superior para separar los botones */}
+          <button
+            type="button"
+            onClick={handleSendMail}
+            disabled={!formValid}
+            className={`w-full py-3 text-white font-normal text-lg rounded-md ${formValid ? 'bg-red-500 hover:bg-red-600' : 'bg-pink-300'}`}
+          >
+            SOLICITAR
+          </button>
 
-<div>
-  <label className="block text-sm font-medium text-gray-700">Confirmar Clave</label>
-  <input
-    type="password"
-    value={confirmarClave}
-    onChange={(e) => setConfirmarClave(e.target.value)}
-    disabled={!dniValid || isSearching}
-    className={`w-full border rounded-md px-3 py-2 ${(!dniValid || isSearching) ? "bg-gray-100 cursor-not-allowed" : ""}`}
-  />
-  {confirmarClaveError && <p className="text-red-500 text-sm mt-1">{confirmarClaveError}</p>}
-</div>
+          <button
+            type="button"
+            onClick={handleResetForm}
+            className="w-full py-3 mt-4 border border-gray-300 text-gray-500 font-normal text-lg rounded-md hover:bg-gray-50"
+          >
+            REINICIAR FORMULARIO
+          </button>
+        </div>
+      </div>
+      
+      {showPopup && (
+        <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-md p-6 shadow-lg text-center">
+            <p className="text-green-600 font-semibold">Correo de verificación enviado.</p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
 
+      {/* Nuevo popup para error de DNI */}
+      {showUsernameErrorPopup && (
+        <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-md p-6 shadow-lg text-center">
+            <p className="text-red-600 font-semibold">DNI no válido o trabajador no activo</p>
+            <button
+              onClick={() => setShowUsernameErrorPopup(false)}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
 
-    <button
-  type="button"
-  onClick={handleSendEmail}
-  disabled={!formValid}
-  className={`w-full py-2 rounded-md transition ${formValid ? "bg-red-600 text-white hover:bg-red-700" : "bg-gray-300 text-gray-600 cursor-not-allowed"}`}
->
-  Solicitar
-</button>
-
-<button
-  type="button"
-  onClick={handleResetForm}
-  className="w-full py-2 rounded-md border border-gray-400 text-gray-600 hover:bg-gray-100 transition"
->
-  Reiniciar formulario
-</button>
-
-      </form>
-{showPopup && (
-  <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="bg-white rounded-md p-6 shadow-lg text-center">
-      <p className="text-green-600 font-semibold">Correo de verificación enviado.</p>
-      <button
-        onClick={() => setShowPopup(false)}
-        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-      >
-        Aceptar
-      </button>
-    </div>
-  </div>
-)}
-
-
-{isLoading && (
-  <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-red-600 border-solid"></div>
-  </div>
-)}
+      {isLoading && (
+        <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-red-600 border-solid"></div>
+        </div>
+      )}
     </div>
   );
 }

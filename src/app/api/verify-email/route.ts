@@ -1,42 +1,84 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
-interface Usuario {
-  dni: string;
-  nombreCompleto: string;
-  email: string;
-  hashedPassword: string;
-}
-
-const fakeDB: Usuario[] = [];
-
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
 
   if (!token) {
-    return NextResponse.json({ success: false, message: "Token inválido" }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Token no proporcionado" }, { status: 400 });
   }
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET as string) as {
-      dni: string;
-      nombreCompleto: string;
-      email: string;
-      hashedPassword: string;
+      username: string;
+      nombres: string;
+      apellidos: string;
+      mail: string;
+      password: string;
     };
 
-    fakeDB.push({
-      dni: payload.dni,
-      nombreCompleto: payload.nombreCompleto,
-      email: payload.email,
-      hashedPassword: payload.hashedPassword,
-    });
+    const userData = {
+      username: payload.username,
+      password: payload.password,
+      nombres: payload.nombres,
+      apellidos: payload.apellidos,
+      mail: payload.mail,
+    };
 
-    console.log("Usuario registrado:", fakeDB);
+    const createUserRes = await fetch(
+      `${process.env.NEXT_PUBLIC_TDP_API_BASE_URL}/rest/security/usuario/crear`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      }
+    );
 
-    return NextResponse.json({ success: true, data: payload });
-  } catch {
-    return NextResponse.json({ success: false, message: "Token inválido o expirado" }, { status: 400 });
+    const responseText = await createUserRes.text();
+
+       let result;
+    try {
+      result = JSON.parse(responseText);
+
+      if (result.status === "failure" && result.error?.includes("Usuario ya existe")) {
+        return NextResponse.redirect("http://localhost:3000/registro-exitoso?yaExiste=true");
+      } 
+
+      if (result.status !== "ok") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Error al crear usuario",
+            error: result.error || result.text || "Respuesta inesperada",
+          },
+          { status: 500 }
+        );
+      }
+    } catch {
+      // Si no es JSON pero status HTTP fue 200, asumimos que se creó correctamente
+      if (createUserRes.status === 200) {
+        return NextResponse.redirect("http://localhost:3000/registro-exitoso");
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Respuesta no válida del servidor externo",
+            raw: responseText,
+          },
+          { status: 502 }
+        );
+      }
+    }
+
+    // Todo bien
+    return NextResponse.redirect("http://localhost:3000/registro-exitoso");
+  } catch (err: unknown) {
+    console.error("Error verificando token:", err);
+console.error("JWT_SECRET:", process.env.JWT_SECRET);
+    return NextResponse.json(
+      { success: false, message: "Token inválido o expirado" },
+      { status: 400 }
+    );
   }
 }
