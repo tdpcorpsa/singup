@@ -56,7 +56,6 @@ export async function GET(req: Request) {
         );
       }
     } catch {
-      // Si no es JSON pero status HTTP fue 200, asumimos que se creó correctamente
       if (createUserRes.status === 200) {
         return NextResponse.redirect("http://localhost:3000/registro-exitoso");
       } else {

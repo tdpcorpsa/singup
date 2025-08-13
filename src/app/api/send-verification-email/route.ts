@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       nombres,
       apellidos,
       mail,
-      password: clave, // en texto plano
+      password: clave, 
     },
     process.env.JWT_SECRET as string,
     { expiresIn: "10m" }

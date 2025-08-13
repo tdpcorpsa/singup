@@ -27,8 +27,8 @@ body {
 }
 /* globals.css o layout.css */
 html, body {
-  overflow: hidden; /* ❌ elimina scroll de navegador embebido */
-  height: 100%;     /* ✅ asegura que ocupe todo el espacio del iframe */
+  overflow: hidden; 
+  height: 100%;     
   margin: 0;
   padding: 0;
 } 

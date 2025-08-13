@@ -266,7 +266,7 @@ export default function Home() {
           {confirmarClaveError && <p className="text-red-500 text-sm mt-1">{confirmarClaveError}</p>}
         </div>
 
-        <div className="pt-4"> {/* Añadido padding superior para separar los botones */}
+        <div className="pt-4"> 
           <button
             type="button"
             onClick={handleSendMail}
@@ -300,7 +300,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Nuevo popup para error de DNI */}
       {showUsernameErrorPopup && (
         <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-md p-6 shadow-lg text-center">

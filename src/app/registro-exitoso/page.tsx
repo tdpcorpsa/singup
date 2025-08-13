@@ -10,7 +10,6 @@ export default function RegistroExitoso() {
   const nuevo = searchParams.get("nuevo") === "true";
 
   useEffect(() => {
-    // Si no viene de un flujo válido, redirige al inicio
     if (!yaExiste && !nuevo) {
       router.replace("/");
     }
