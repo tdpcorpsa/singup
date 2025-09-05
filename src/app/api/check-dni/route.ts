@@ -8,4 +8,4 @@ export async function POST(req: Request) {
   const data = await apiRes.json();
 
   return NextResponse.json(data);
-}
+} 
