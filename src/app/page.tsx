@@ -23,7 +23,18 @@ export default function Home() {
   const [confirmarClaveError, setConfirmarClaveError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [usernameError, setUsernameError] = useState("");
-  
+  const parentOrigin = process.env.NEXT_PUBLIC_PARENT_ORIGIN ?? "*";
+  function notifyParentToClose() {
+    // Solo si estamos embebidos en iframe
+    if (typeof window !== "undefined" && window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({ type: "form:close" }, parentOrigin);
+      } catch {
+        // si falla, no rompas la UI
+      }
+    }
+  }
+
   useEffect(() => {
     const usernameTrimmed = username.trim();
 
@@ -292,8 +303,11 @@ export default function Home() {
           <div className="bg-white rounded-md p-6 shadow-lg text-center">
             <p className="text-green-600 font-semibold">Correo de verificación enviado.</p>
             <button
-              onClick={() => setShowPopup(false)}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              onClick={() => {
+                        setShowPopup(false);
+                        notifyParentToClose();
+                      }}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
             >
               Aceptar
             </button>

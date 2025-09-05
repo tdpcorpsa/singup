@@ -6,11 +6,17 @@ export async function GET(req: Request) {
   const token = searchParams.get("token");
 
   if (!token) {
-    return NextResponse.json({ success: false, message: "Token no proporcionado" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "Token no proporcionado" },
+      { status: 400 }
+    );
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    const payload = jwt.verify(
+      token,
+      process.env.JWT_SECRET as string
+    ) as {
       username: string;
       nombres: string;
       apellidos: string;
@@ -37,13 +43,18 @@ export async function GET(req: Request) {
 
     const responseText = await createUserRes.text();
 
-       let result;
+    let result;
     try {
       result = JSON.parse(responseText);
 
-      if (result.status === "failure" && result.error?.includes("Usuario ya existe")) {
-        return NextResponse.redirect("http://localhost:3000/registro-exitoso?yaExiste=true");
-      } 
+      if (
+        result.status === "failure" &&
+        result.error?.includes("Usuario ya existe")
+      ) {
+        return NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL}/registro-exitoso?yaExiste=true`
+        );
+      }
 
       if (result.status !== "ok") {
         return NextResponse.json(
@@ -57,7 +68,9 @@ export async function GET(req: Request) {
       }
     } catch {
       if (createUserRes.status === 200) {
-        return NextResponse.redirect("http://localhost:3000/registro-exitoso");
+        return NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL}/registro-exitoso?nuevo=true`
+        );
       } else {
         return NextResponse.json(
           {
@@ -71,10 +84,11 @@ export async function GET(req: Request) {
     }
 
     // Todo bien
-    return NextResponse.redirect("http://localhost:3000/registro-exitoso");
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL}/registro-exitoso?nuevo=true`
+    );
   } catch (err: unknown) {
     console.error("Error verificando token:", err);
-console.error("JWT_SECRET:", process.env.JWT_SECRET);
     return NextResponse.json(
       { success: false, message: "Token inválido o expirado" },
       { status: 400 }
