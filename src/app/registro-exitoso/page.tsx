@@ -1,19 +1,21 @@
-"use client";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+//src/app/registro-exitoso/page.tsx
+import { redirect } from "next/navigation";
 
-export default function RegistroExitoso() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+type Props = {
+  searchParams: {
+    yaExiste?: string;
+    nuevo?: string;
+  };
+};
 
-  const yaExiste = searchParams.get("yaExiste") === "true";
-  const nuevo = searchParams.get("nuevo") === "true";
+export default function RegistroExitoso({ searchParams }: Props) {
+  const yaExiste = searchParams.yaExiste === "true";
+  const nuevo = searchParams.nuevo === "true";
 
-  useEffect(() => {
-    if (!yaExiste && !nuevo) {
-      router.replace("/");
-    }
-  }, [yaExiste, nuevo, router]);
+  // Si no viene ningún flag válido, vuelve al inicio desde el servidor
+  if (!yaExiste && !nuevo) {
+    redirect("/");
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center">
