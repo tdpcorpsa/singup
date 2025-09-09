@@ -6,9 +6,13 @@ import { Search } from "lucide-react";
 export default function Home() {
   const [username, setUsername] = useState("");
   const [usernameValid, setUsernameValid] = useState(false);
+  //const [usernameAlreadyExists, setUsernameAlreadyExists] = useState(false);
+  const [showUsernameAlreadyExistsPopup, setShowUsernameAlreadyExistsPopup] = useState(false);
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");  const [mail, setMail] = useState("");
   const [mailValid, setMailValid] = useState(false);
+  const [direccion, setDireccion] = useState("");
+  const [direccionValid, setDireccionValid] = useState(false);
   const [clave, setClave] = useState("");
   const [claveValid, setClaveValid] = useState(false);
   const [confirmarClave, setConfirmarClave] = useState("");
@@ -19,6 +23,7 @@ export default function Home() {
   const [showPopup, setShowPopup] = useState(false);
   const [showUsernameErrorPopup, setShowUsernameErrorPopup] = useState(false); // Nuevo estado para el popup de error de DNI
   const [mailError, setMailError] = useState("");
+  const [direccionError, setDireccionError] = useState("");
   const [claveError, setClaveError] = useState("");
   const [confirmarClaveError, setConfirmarClaveError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -60,11 +65,14 @@ export default function Home() {
       body: JSON.stringify({ dni: username })
     });
     const data = await res.json();
+    console.log(data);
 
     if (data?.data?.ESTADO === "ACTIVO") {
       if (data.data?.mail && data.data.mail.trim() !== "") {
         setUsernameValid(false);
-        setShowUsernameErrorPopup(true);
+        setShowUsernameErrorPopup(false);
+        //setUsernameAlreadyExists(true);
+        setShowUsernameAlreadyExistsPopup(true);
         setIsSearching(false);
         return;
       }
@@ -93,6 +101,8 @@ export default function Home() {
     setApellidos("");
     setMail("");
     setMailValid(false);
+    setDireccion("");
+    setDireccionValid(false);
     setClave("");
     setClaveValid(false);
     setConfirmarClave("");
@@ -102,7 +112,7 @@ export default function Home() {
   };
 
   const handleSendMail = async () => {
-    if (mailError || claveError || confirmarClaveError || !formValid) return;
+    if (mailError || direccionError || claveError || confirmarClaveError || !formValid) return;
 
     setIsLoading(true);
     const res = await fetch("/api/send-verification-email", {
@@ -111,6 +121,7 @@ export default function Home() {
       body: JSON.stringify({
         username,
         mail,
+        direccion,
         clave,
         nombres,
         apellidos
@@ -139,6 +150,18 @@ export default function Home() {
       setMailValid(false);
     }
 
+    // Dirección mínimo 10 caracteres
+    if (direccion && direccion.trim().length < 10) {
+      setDireccionError("La dirección debe tener al menos 10 caracteres.");
+      setDireccionValid(false);
+    } else if (direccion && direccion.trim().length >= 10) {
+      setDireccionError("");
+      setDireccionValid(true);
+    } else {
+      setDireccionError("");
+      setDireccionValid(false);
+    }
+
     // Clave mínimo 6 caracteres
     if (clave && clave.length < 6) {
       setClaveError("Clave mínima de 6 caracteres.");
@@ -164,7 +187,7 @@ export default function Home() {
       setConfirmarClaveError("");
       setConfirmarClaveValid(false);
     }
-  }, [mail, clave, confirmarClave]);
+  }, [mail, direccion, clave, confirmarClave]);
 
   useEffect(() => {
     if (
@@ -173,6 +196,8 @@ export default function Home() {
       apellidos.trim() &&
       mail.trim() &&
       mailValid &&
+      direccion.trim() &&
+      direccionValid &&
       clave &&
       claveValid &&
       confirmarClave &&
@@ -188,6 +213,8 @@ export default function Home() {
     apellidos,
     mail,
     mailValid,
+    direccion,
+    direccionValid,
     clave,
     claveValid,
     confirmarClave,
@@ -252,6 +279,18 @@ export default function Home() {
             className={`w-full py-1 border-b-2 ${mailError ? 'border-red-500' : mailValid ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
           />
           {mailError && <p className="text-red-500 text-sm mt-1">{mailError}</p>}
+        </div>
+
+        <div>
+          <label className="text-gray-500 text-sm font-normal">Dirección</label>
+          <input
+            type="text"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+            disabled={!usernameValid || isSearching}
+            className={`w-full py-1 border-b-2 ${direccionError ? 'border-red-500' : direccionValid ? 'border-green-600' : 'border-gray-300'} focus:outline-none`}
+          />
+          {direccionError && <p className="text-red-500 text-sm mt-1">{direccionError}</p>}
         </div>
 
         <div>
@@ -321,6 +360,20 @@ export default function Home() {
             <p className="text-red-600 font-semibold">DNI no válido o trabajador no activo</p>
             <button
               onClick={() => setShowUsernameErrorPopup(false)}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showUsernameAlreadyExistsPopup && (
+        <div className="fixed inset-0 bg-opacity-1 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-md p-6 shadow-lg text-center">
+            <p className="text-red-600 font-semibold">Usuario ya registrado</p>
+            <button
+              onClick={() => setShowUsernameAlreadyExistsPopup(false)}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
             >
               Aceptar
